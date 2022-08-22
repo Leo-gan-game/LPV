@@ -1,0 +1,211 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel propagation
+#pragma kernel propagationComposition
+#pragma kernel lightInject
+#pragma kernel lpvClear
+#include "SamplingLibrary.hlsl"
+#pragma enable_d3d11_debug_symbols
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWTexture3D<float4> gridRTex;
+RWTexture3D<float4> gridGTex;
+RWTexture3D<float4> gridBTex;
+RWTexture3D<float> gridLuminanceTex;
+
+RWTexture3D<float4> outputGridRTex;
+RWTexture3D<float4> outputGridGTex;
+RWTexture3D<float4> outputGridBTex;
+
+// Readable/Writable input textures for LPV grid
+RWTexture3D<float4>	lpvRedSHInput;
+RWTexture3D<float4>	lpvGreenSHInput;
+RWTexture3D<float4>	lpvBlueSHInput;
+
+// Readable/Writable output textures for LPV grid
+RWTexture3D<float4>	lpvRedSHOutput;
+RWTexture3D<float4>	lpvGreenSHOutput;
+RWTexture3D<float4>	lpvBlueSHOutput;
+
+#define PI 3.1415926f
+
+#define SH_C0 0.282094792f // 1 / 2sqrt(pi)
+#define SH_C1 0.488602512f // sqrt(3/pi) / 2
+
+#define SH_cosLobe_C0 0.886226925f // sqrt(pi)/2 
+#define SH_cosLobe_C1 1.02332671f // sqrt(pi/3) 
+
+float3 minAABB;
+float3 maxAABB;
+float3 cellSize;
+float4x4 RSM_VP;
+float4x4 RSM_V;
+float MaxSampleRadius;
+Texture2D<float4> RSM_Postion;
+Texture2D<float4> RSM_Normal;
+Texture2D<float4> RSM_Flux;
+uint _RsmSampleCount;
+uint _TextureSize;
+float mweight;
+uint CellCount;
+uint rsmResolution;
+float4x4 WorldToLightLocalMatrix;
+
+uint3 convertPointWSToGridIndex(float3 wPos) {
+    return float3((wPos - minAABB) / cellSize);
+}
+
+float3 convertGridIndexToPointWS(uint3 GridIndex) {
+    return minAABB + GridIndex * cellSize + 0.5 * cellSize;
+}
+
+float4 evalSH_direct(float3 dir) {
+    return float4(SH_C0, -SH_C1 * dir.y, SH_C1 * dir.z, -SH_C1 * dir.x);
+}
+
+float4 dirToCosineLobe(float3 dir)
+{
+    return float4(SH_cosLobe_C0, -SH_cosLobe_C1 * dir.y, SH_cosLobe_C1 * dir.z, -SH_cosLobe_C1 * dir.x);
+}
+
+
+
+float3 getEvalSideDirection(int index, int3 orientation) {
+    const int2 cellSides[4] = { int2(1.0, 0.0), int2(0.0, 1.0), int2(-1.0, 0.0), int2(0.0, -1.0) };
+    const float smallComponent = 0.4472135; // 1 / sqrt(5)
+    const float bigComponent = 0.894427; // 2 / sqrt(5)
+    const int2 side = cellSides[index];
+    float3 tmp = float3(side.x * smallComponent, side.y * smallComponent, bigComponent);
+    return float3(orientation.x * tmp.x, orientation.y * tmp.y, orientation.z * tmp.z);
+}
+
+float3 getReprojSideDirection(int index, int3 orientation) {
+    const int2 cellSides[4] = { int2(1.0, 0.0), int2(0.0, 1.0), int2(-1.0, 0.0), int2(0.0, -1.0) };
+    const int2 side = cellSides[index];
+    return float3(orientation.x * side.x, orientation.y * side.y, 0);
+}
+
+[numthreads(1, 1, 1)]
+void propagation(uint3 id : SV_DispatchThreadID) {
+    float4 r;
+    float4 g;
+    float4 b;
+    const int3 NeighbourDit[6] = {
+        //+Z
+        float3(0,0,1),
+        //-Z
+        float3(0,0,-1),
+        //+X
+        float3(1,0,0),
+        //-X
+        float3(-1,0,0),
+        //+Y
+        float3(0,1,0),
+        //-Y
+        float3(0,-1,0)
+    };
+    
+
+    for (int index = 0; index < 6; index++) {
+        float4 RNeighbour;
+        float4 GNeighbour;
+        float4 BNeighbour;
+        int3 nDir = NeighbourDit[index];
+        int3 neighbourCellIndex = id - nDir;
+        RNeighbour = gridRTex[neighbourCellIndex.xyz];
+        GNeighbour = gridGTex[neighbourCellIndex.xyz];
+        BNeighbour = gridBTex[neighbourCellIndex.xyz];
+
+        const float directFaceSubtendedSolidAngle = 0.4006696846f/PI;
+        const float sideFaceSubtendedSolidAngle = 0.4234413544f/PI;
+
+        for (uint sideFace = 0; sideFace < 4; ++sideFace)
+        {
+            float3 evalDirection = getEvalSideDirection(sideFace, nDir);
+            float3 reprojDirection = getReprojSideDirection(sideFace, nDir);
+
+            float4 reprojDirectionCosineLobeSH = dirToCosineLobe(reprojDirection);
+            float4 evalDirectionSH = evalSH_direct(evalDirection);
+
+            r += sideFaceSubtendedSolidAngle * dot(RNeighbour, evalDirectionSH) * reprojDirectionCosineLobeSH;
+            g += sideFaceSubtendedSolidAngle * dot(GNeighbour, evalDirectionSH) * reprojDirectionCosineLobeSH;
+            b += sideFaceSubtendedSolidAngle * dot(BNeighbour, evalDirectionSH) * reprojDirectionCosineLobeSH;
+        }
+
+        float4 nDirCosineLobeSH = dirToCosineLobe(nDir);
+        float4 nDirSH = evalSH_direct(nDir);
+        r += directFaceSubtendedSolidAngle*max(0.0, dot(RNeighbour, nDirCosineLobeSH)) * nDirSH;
+        g += directFaceSubtendedSolidAngle*max(0.0, dot(GNeighbour, nDirCosineLobeSH)) * nDirSH;
+        b += directFaceSubtendedSolidAngle*max(0.0, dot(BNeighbour, nDirCosineLobeSH)) * nDirSH;
+    }
+    outputGridRTex[id] += r ;
+    outputGridGTex[id] += g ;
+    outputGridBTex[id] += b ;
+
+}
+
+[numthreads(8, 8, 1)]
+void propagationComposition(uint3 id : SV_DispatchThreadID) {
+    uint3 cellIndex = id.xyz;
+    lpvRedSHOutput[cellIndex] += lpvRedSHInput[cellIndex];
+    lpvGreenSHOutput[cellIndex] += lpvGreenSHInput[cellIndex];
+    lpvBlueSHOutput[cellIndex] += lpvBlueSHInput[cellIndex];
+
+    lpvRedSHInput[cellIndex] = float4(0.0f, 0.0f, 0.0f, 0.0f);
+    lpvGreenSHInput[cellIndex] = float4(0.0f, 0.0f, 0.0f, 0.0f);
+    lpvBlueSHInput[cellIndex] = float4(0.0f, 0.0f, 0.0f, 0.0f);
+}
+
+// Function to get luminance of the input color
+inline float GetLuminance(float3 color)
+{
+    return ((color.r * 0.299f) + (color.g * 0.587f) + (color.b * 0.114f));
+}
+
+//[numthreads(1,1,1)]
+//void lightInject(uint3 id : SV_DispatchThreadID)
+//{
+//    float3 vpl_normal = normalize(RSM_Normal[id.xy] * 2 - 1).xyz;
+//    float3 vpl_worldPos = RSM_Postion[id.xy].xyz;
+//    float3 vpl_flux = RSM_Flux[id.xy].xyz;
+//    float luminance = GetLuminance(vpl_flux);
+//    uint3 cellindex = convertPointWSToGridIndex(vpl_worldPos);
+//    float3 normal = normalize(mul((float3x3)WorldToLightLocalMatrix, vpl_normal));
+//    //if (luminance > gridLuminanceTex[cellindex]) {
+//        float4 sh = dirToCosineLobe(normal) / PI;
+//        gridRTex[cellindex] = sh * vpl_flux.r;
+//        gridGTex[cellindex] = sh * vpl_flux.g;
+//        gridBTex[cellindex] = sh * vpl_flux.b;
+//        gridLuminanceTex[cellindex] = luminance;
+//    //}
+//}
+
+
+[numthreads(1, 1, 1)]
+void lightInject(uint3 id : SV_DispatchThreadID)
+{
+    float3 vpl_worldPos = convertGridIndexToPointWS(id);
+    float4 RSM_UV = mul(RSM_VP, float4(vpl_worldPos, 1));
+    float4 rec_ndc = RSM_UV / RSM_UV.w;
+    float2 rec_uv = max(0,rec_ndc.xy * 0.5 + 0.5);
+    uint2 uid = rec_uv.xy * rsmResolution;
+    float3 posWS = RSM_Postion[uid.xy].xyz;
+    if (length(posWS- vpl_worldPos)<length(cellSize)) {
+        float3 vpl_normal = normalize(RSM_Normal[uid.xy] * 2 - 1).xyz;
+        float3 vpl_flux = RSM_Flux[uid.xy].xyz;
+        float luminance = GetLuminance(vpl_flux);
+        float3 normal = normalize(mul((float3x3)WorldToLightLocalMatrix, vpl_normal));
+        float4 sh = dirToCosineLobe(normal) / PI;
+        gridRTex[id] = sh * vpl_flux.r;
+        gridGTex[id] = sh * vpl_flux.g;
+        gridBTex[id] = sh * vpl_flux.b;
+    }
+    
+}
+[numthreads(4, 4, 4)]
+void lpvClear(uint3 id : SV_DispatchThreadID) {
+    gridRTex[id] = 0;
+    gridGTex[id] = 0;
+    gridBTex[id] = 0;
+    gridLuminanceTex[id] = 0;
+}
+
