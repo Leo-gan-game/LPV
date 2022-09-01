@@ -2,3 +2,5 @@ LPV/obj/
 LPV/Logs/
 LPV/Library/
 LPV/.vs/
+LPV/Temp/
+*.apk

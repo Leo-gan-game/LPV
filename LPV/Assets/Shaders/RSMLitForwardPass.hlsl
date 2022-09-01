@@ -251,14 +251,14 @@ half4 RSMLitPassFragment(Varyings input) : SV_Target
 #endif
     float3 index = convertPointWSToGridIndex(worldPos);
     float3 uvw = index / 32.0;
-    float3 Normal = input.normalWS;// normalize(mul((float3x3)WorldToLightLocalMatrix, input.normalWS));
+    float3 Normal =  normalize(mul((float3x3)WorldToLightLocalMatrix, input.normalWS));
     float4 SHintensity = evalSH_direct(-Normal);
     float3 LpvIntensity = float3(
         dot(SHintensity, SAMPLE_TEXTURE3D(gridRTex, sampler_gridRTex, uvw)),
         dot(SHintensity, SAMPLE_TEXTURE3D(gridGTex, sampler_gridGTex, uvw)),
         dot(SHintensity, SAMPLE_TEXTURE3D(gridBTex, sampler_gridBTex, uvw))
         );
-    indirect.rgb = max(0,LpvIntensity)*mweight;
+    indirect.rgb = max(0,LpvIntensity) * mweight;
 #if defined(RSM_DEBUG)
     color.rgb = indirect;
 #else
