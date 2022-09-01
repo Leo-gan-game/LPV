@@ -35,7 +35,6 @@ public class LPVFeature : ScriptableRendererFeature
         }
         propagationPass = new PropagationPass(featureSetting.CS,featureSetting.lpvGridResolution, featureSetting.rsmResolution, featureSetting.bounds);
         
-        // Configures where the render pass should be injected.
         propagationPass.renderPassEvent = featureSetting.renderPassEvent;
     }
 
@@ -48,6 +47,7 @@ public class LPVFeature : ScriptableRendererFeature
 
     protected override void Dispose(bool disposing)
     {
+        
         base.Dispose(disposing);
         propagationPass.Clear();
     }

@@ -66,7 +66,13 @@ public class PropagationPass : ScriptableRenderPass
         profilingSampler = new ProfilingSampler(profilerTag);
         lpvGridResolution = gridResolution;
         this.rsmResolution = rsmResolution;
-        lPVData = new LPVData();
+        InitTexture();
+
+
+    }
+
+    private void InitTexture()
+    {
         var desc = new RenderTextureDescriptor(lpvGridResolution, lpvGridResolution, RenderTextureFormat.ARGBFloat);
         desc.dimension = TextureDimension.Tex3D;
         desc.bindMS = false;
@@ -77,42 +83,86 @@ public class PropagationPass : ScriptableRenderPass
         desc.enableRandomWrite = true;
         desc.msaaSamples = 1;
         desc.sRGB = true;
-        lPVData.lpvRedSH = new RenderTexture(desc);
-        lPVData.lpvGreenSH = new RenderTexture(desc);
-        lPVData.lpvBlueSH = new RenderTexture(desc);
+        if(lPVData.lpvRedSH == null)
+        {
+            lPVData.lpvRedSH = new RenderTexture(desc);
+            lPVData.lpvGreenSH = new RenderTexture(desc);
+            lPVData.lpvBlueSH = new RenderTexture(desc);
+            lPVData.lpvLuminance = new RenderTexture(desc);
+            lPVData.lpvRedPropagationBuffer = new RenderTexture(desc);
+            lPVData.lpvGreenPropagationBuffer = new RenderTexture(desc);
+            lPVData.lpvBluePropagationBuffer = new RenderTexture(desc);
+
+            lPVData.lpvRedSH.filterMode = FilterMode.Trilinear;
+            lPVData.lpvGreenSH.filterMode = FilterMode.Trilinear;
+            lPVData.lpvBlueSH.filterMode = FilterMode.Trilinear;
+
+            lPVData.lpvRedPropagationBuffer.filterMode = FilterMode.Trilinear;
+            lPVData.lpvGreenPropagationBuffer.filterMode = FilterMode.Trilinear;
+            lPVData.lpvBluePropagationBuffer.filterMode = FilterMode.Trilinear;
+
+            lPVData.lpvRedSH.Create();
+            lPVData.lpvGreenSH.Create();
+            lPVData.lpvBlueSH.Create();
+            lPVData.lpvLuminance.Create();
+
+            lPVData.lpvRedPropagationBuffer.Create();
+            lPVData.lpvGreenPropagationBuffer.Create();
+            lPVData.lpvBluePropagationBuffer.Create();
+        }
+
         //lPVData.dimXYZ = 32 * 32 * 32;
         //int stride = Marshal.SizeOf(typeof(float));
         //lPVData.lpvLuminance = new ComputeBuffer(lPVData.dimXYZ, stride, ComputeBufferType.Structured);
-        lPVData.lpvLuminance = new RenderTexture(desc);
-        lPVData.lpvRedPropagationBuffer = new RenderTexture(desc);
-        lPVData.lpvGreenPropagationBuffer = new RenderTexture(desc);
-        lPVData.lpvBluePropagationBuffer = new RenderTexture(desc);
-        
-        lPVData.lpvRedSH.filterMode = FilterMode.Trilinear;
-        lPVData.lpvGreenSH.filterMode = FilterMode.Trilinear;
-        lPVData.lpvBlueSH.filterMode = FilterMode.Trilinear;
-
-        lPVData.lpvRedPropagationBuffer.filterMode = FilterMode.Trilinear;
-        lPVData.lpvGreenPropagationBuffer.filterMode = FilterMode.Trilinear;
-        lPVData.lpvBluePropagationBuffer.filterMode = FilterMode.Trilinear;
-        
-        lPVData.lpvRedSH.Create();
-        lPVData.lpvGreenSH.Create();
-        lPVData.lpvBlueSH.Create();
-        lPVData.lpvLuminance.Create();
-
-        lPVData.lpvRedPropagationBuffer.Create();
-        lPVData.lpvGreenPropagationBuffer.Create();
-        lPVData.lpvBluePropagationBuffer.Create();
-
+       
     }
 
-    
+    private void ClearTexture()
+    {
+        if (lPVData.lpvRedSH)
+        {
+            lPVData.lpvRedSH.Release();
+            lPVData.lpvRedSH = null;
+        }
+        if (lPVData.lpvGreenSH)
+        {
+            lPVData.lpvGreenSH.Release();
+            lPVData.lpvGreenSH = null;
+        }
+        if (lPVData.lpvBlueSH)
+        {
+            lPVData.lpvBlueSH.Release();
+            lPVData.lpvBlueSH = null;
+        }
+        if (lPVData.lpvLuminance)
+        {
+            lPVData.lpvLuminance.Release();
+            lPVData.lpvLuminance = null;
+        }
+        if (lPVData.lpvRedPropagationBuffer)
+        {
+            lPVData.lpvRedPropagationBuffer.Release();
+            lPVData.lpvRedPropagationBuffer = null;
+        }
+        if (lPVData.lpvGreenPropagationBuffer)
+        {
+            lPVData.lpvGreenPropagationBuffer.Release();
+            lPVData.lpvGreenPropagationBuffer = null;
+        }
+        if (lPVData.lpvBluePropagationBuffer)
+        {
+            lPVData.lpvBluePropagationBuffer.Release();
+            lPVData.lpvBluePropagationBuffer = null;
+        }
+        
+        
 
+    }
 
 
     public override void Configure(CommandBuffer cmd, RenderTextureDescriptor cameraTextureDescriptor)
     {
+        InitTexture();
         base.Configure(cmd, cameraTextureDescriptor);
         ConfigureClear(ClearFlag.All, Color.black);
     }
@@ -123,7 +173,7 @@ public class PropagationPass : ScriptableRenderPass
     // The render pipeline will ensure target setup and clearing happens in a performant manner.
     public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData)
     {
-        
+       
     }
 
 
@@ -149,15 +199,15 @@ public class PropagationPass : ScriptableRenderPass
             context.ExecuteCommandBuffer(cmd);//set cmd need execute the command.
             cmd.Clear();
             cmd.SetComputeMatrixParam(propagationCS, worldToLightLocalMatrixID, light.transform.worldToLocalMatrix);
-            if (passIndex % 1 == 0)
+            if (passIndex % 8 == 0)
             {
                 LpvClear(cmd);
                 LightInject(cmd);
                 passIndex = 0;
-            for (int i = 0; i < 8; i++)
-            {
-                LPVPropagation(context, cmd);
-            }
+                for (int i = 0; i < 8; i++)
+                {
+                    LPVPropagation(context, cmd);
+                }
             }
             passIndex++;
         }
@@ -231,16 +281,12 @@ public class PropagationPass : ScriptableRenderPass
     // Cleanup any allocated resources that were created during the execution of this render pass.
     public override void OnCameraCleanup(CommandBuffer cmd)
     {
-        
     }
 
     public void Clear()
     {
-        if (lPVData.lpvLuminance != null)
-        {
-            lPVData.lpvLuminance.Release();
-        }
-        
+        ClearTexture();
+
     }
     
 }

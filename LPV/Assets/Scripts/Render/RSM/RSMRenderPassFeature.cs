@@ -352,12 +352,12 @@ public class RSMRenderPassFeature : ScriptableRendererFeature
             viewMatrix.SetColumn(3, stableLightPosWorld);
             viewMatrix.m33 = 1;
             project = Matrix4x4.Ortho(-halfFrustumBoundsSizeLocal.x, halfFrustumBoundsSizeLocal.x, -halfFrustumBoundsSizeLocal.y, halfFrustumBoundsSizeLocal.y, 0, 1000);
+            //project = GL.GetGPUProjectionMatrix(project, false);
             var t = Matrix4x4.identity;
             t.m22 = -1;
             viewMatrix = t * viewMatrix;
             viewMatrix = viewMatrix.inverse;
             rsmVP = project * viewMatrix;
- 
 
             ////计算从相机局部坐标系转到灯光坐标系的矩阵
             //Matrix4x4 cameraToLight = camera.transform.localToWorldMatrix;

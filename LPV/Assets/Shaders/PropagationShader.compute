@@ -104,6 +104,8 @@ void propagation(uint3 id : SV_DispatchThreadID) {
         float3(0,-1,0)
     };
     
+    const float directFaceSubtendedSolidAngle = 0.4006696846f / PI;
+    const float sideFaceSubtendedSolidAngle = 0.4234413544f / PI;
 
     for (int index = 0; index < 6; index++) {
         float4 RNeighbour;
@@ -115,8 +117,7 @@ void propagation(uint3 id : SV_DispatchThreadID) {
         GNeighbour = gridGTex[neighbourCellIndex.xyz];
         BNeighbour = gridBTex[neighbourCellIndex.xyz];
 
-        const float directFaceSubtendedSolidAngle = 0.4006696846f/PI;
-        const float sideFaceSubtendedSolidAngle = 0.4234413544f/PI;
+
 
         for (uint sideFace = 0; sideFace < 4; ++sideFace)
         {
@@ -186,7 +187,7 @@ void lightInject(uint3 id : SV_DispatchThreadID)
     float3 vpl_worldPos = convertGridIndexToPointWS(id);
     float4 RSM_UV = mul(RSM_VP, float4(vpl_worldPos, 1));
     float4 rec_ndc = RSM_UV / RSM_UV.w;
-    float2 rec_uv = max(0,rec_ndc.xy * 0.5 + 0.5);
+    float2 rec_uv = max(0,rec_ndc.xy * 0.5 + 0.5); 
     uint2 uid = rec_uv.xy * rsmResolution;
     float3 posWS = RSM_Postion[uid.xy].xyz;
     if (length(posWS- vpl_worldPos)<length(cellSize)) {
