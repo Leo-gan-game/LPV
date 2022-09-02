@@ -84,7 +84,7 @@ float3 getReprojSideDirection(int index, int3 orientation) {
     return float3(orientation.x * side.x, orientation.y * side.y, 0);
 }
 
-[numthreads(1, 1, 1)]
+[numthreads(4, 4, 4)]
 void propagation(uint3 id : SV_DispatchThreadID) {
     float4 r;
     float4 g;
@@ -106,7 +106,7 @@ void propagation(uint3 id : SV_DispatchThreadID) {
     
     const float directFaceSubtendedSolidAngle = 0.4006696846f / PI;
     const float sideFaceSubtendedSolidAngle = 0.4234413544f / PI;
-
+    [UNITY_UNROLL]
     for (int index = 0; index < 6; index++) {
         float4 RNeighbour;
         float4 GNeighbour;
@@ -116,9 +116,7 @@ void propagation(uint3 id : SV_DispatchThreadID) {
         RNeighbour = gridRTex[neighbourCellIndex.xyz];
         GNeighbour = gridGTex[neighbourCellIndex.xyz];
         BNeighbour = gridBTex[neighbourCellIndex.xyz];
-
-
-
+        [UNITY_UNROLL]
         for (uint sideFace = 0; sideFace < 4; ++sideFace)
         {
             float3 evalDirection = getEvalSideDirection(sideFace, nDir);

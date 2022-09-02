@@ -7,6 +7,10 @@ using UnityEngine.Rendering.Universal;
 public class PropagationPass : ScriptableRenderPass
 {
     private const string profilerTag = "Propagation Pass";
+    
+    private static readonly int crTexID = Shader.PropertyToID("crTex");
+    RenderTargetHandle cr = new RenderTargetHandle();
+    
     private static readonly int gridRTexID = Shader.PropertyToID("gridRTex");
     private static readonly int gridGTexID = Shader.PropertyToID("gridGTex");
     private static readonly int gridBTexID = Shader.PropertyToID("gridBTex");
@@ -164,7 +168,10 @@ public class PropagationPass : ScriptableRenderPass
     {
         InitTexture();
         base.Configure(cmd, cameraTextureDescriptor);
-        ConfigureClear(ClearFlag.All, Color.black);
+        //ConfigureClear(ClearFlag.All, Color.black);
+        
+        
+        cmd.GetTemporaryRT(cr.id, 1, 1);
     }
     // This method is called before executing the render pass.
     // It can be used to configure render targets and their clear state. Also to create temporary render target textures.
@@ -188,7 +195,7 @@ public class PropagationPass : ScriptableRenderPass
         int thread_groups = (lpvGridResolution + 3) / 4;
         // read Main Light index;
         int shadowLightIndex = renderingData.lightData.mainLightIndex;
-
+        
         //read light through light index;
         VisibleLight shadowLight = renderingData.lightData.visibleLights[shadowLightIndex];
 
@@ -196,10 +203,17 @@ public class PropagationPass : ScriptableRenderPass
 
         using (new ProfilingScope(cmd, profilingSampler))
         {
+            cmd.SetRenderTarget(cr.Identifier(),
+                RenderBufferLoadAction.DontCare,
+                RenderBufferStoreAction.DontCare,
+                cr.Identifier(),
+                RenderBufferLoadAction.DontCare,
+                RenderBufferStoreAction.DontCare);
+            //cmd.Clear();
             context.ExecuteCommandBuffer(cmd);//set cmd need execute the command.
             cmd.Clear();
             cmd.SetComputeMatrixParam(propagationCS, worldToLightLocalMatrixID, light.transform.worldToLocalMatrix);
-            if (passIndex % 8 == 0)
+            if (passIndex % 1 == 0)
             {
                 LpvClear(cmd);
                 LightInject(cmd);
@@ -234,8 +248,8 @@ public class PropagationPass : ScriptableRenderPass
         cmd.SetComputeTextureParam(propagationCS, propagationKernel, gridRTexID, lPVData.lpvRedSH);
         cmd.SetComputeTextureParam(propagationCS, propagationKernel, gridGTexID, lPVData.lpvGreenSH);
         cmd.SetComputeTextureParam(propagationCS, propagationKernel, gridBTexID, lPVData.lpvBlueSH);
-
-        cmd.DispatchCompute(propagationCS, propagationKernel, lpvGridResolution, lpvGridResolution, lpvGridResolution);
+        int thread_groups = (lpvGridResolution + 3) / 4;
+        cmd.DispatchCompute(propagationCS, propagationKernel, thread_groups, thread_groups, thread_groups);
 
         cmd.SetComputeTextureParam(propagationCS, propagationCompositionKernel, lpvRedSHInputID, lPVData.lpvRedPropagationBuffer);
         cmd.SetComputeTextureParam(propagationCS, propagationCompositionKernel, lpvGreenSHInputID, lPVData.lpvGreenPropagationBuffer);
