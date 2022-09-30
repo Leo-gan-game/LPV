@@ -289,7 +289,7 @@ public class PropagationPass : ScriptableRenderPass
         cmd.SetComputeIntParam(propagationCS, rsmResolutionID, rsmResolution);
         var cellSize = (bounds.max - bounds.min) / lpvGridResolution;
         cmd.SetComputeVectorParam(propagationCS, cellSizeID, cellSize);
-        cmd.DispatchCompute(propagationCS, lightInjectKernel, lpvGridResolution, lpvGridResolution, lpvGridResolution);
+        cmd.DispatchCompute(propagationCS, lightInjectKernel, thread_groups, thread_groups, thread_groups);
 
     }
     // Cleanup any allocated resources that were created during the execution of this render pass.

@@ -1,0 +1,142 @@
+#pragma kernel Reconstruction
+#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+#include "TemporalTool.hlsl"
+
+RWTexture2D<float4> Result;
+int JitterIndex;//抖 动索引[0-3]
+float4 SizeAndInvSize;
+Texture2D<float4> RaymarchingTexture;
+Texture2D<float4> PreviousTexture;
+
+
+
+TEXTURE2D(TileIndexAndSceneDistanceTexture);
+SAMPLER(samplerTileIndexAndSceneDistanceTexture);
+
+float4x4 PrevViewProj;
+float4x4 invProjMatrix;
+#pragma enable_d3d11_debug_symbols
+//float4 ThisViewPos = float4(CurPixelRayVector * CloudAndSceneDistance * 100.0f + View.WorldCameraMovementSinceLastFrame, 1.0f);
+
+static const int2 IndexOffsets[8] = { int2(-1,-1),int2(0, -1), int2(1, -1), int2(-1, 0), int2(1, 0) , int2(-1, 1), int2(0, 1), int2(1, 1) };
+[numthreads(4, 4, 1)] 
+void Reconstruction(uint3 id : SV_DispatchThreadID)
+{
+    //这个compute计算1/2分辨率
+
+    uint yux = id.x % 2;
+    uint yuy = id.y % 2;
+
+    int2 TileID = int2(id.xy/2u );
+
+    uint CurPixelTileIndex = yux * (1 - 2 * yuy) + yuy * 3u;
+    float2 TileAndSD = TileIndexAndSceneDistanceTexture[TileID].xy;
+    uint tileIndex =uint(TileAndSD.x);
+    float4 TargetColor = RaymarchingTexture[TileID.xy];
+    if (CurPixelTileIndex == tileIndex) {
+        Result[id.xy] = TargetColor;
+        return;
+    }
+    //重建深度
+    float deviceDepth = TileAndSD.y;
+#if UNITY_REVERSED_Z
+    deviceDepth = 1 - deviceDepth;
+#endif
+    deviceDepth = 2.0 * deviceDepth - 1.0;
+
+    float2 sceneUV = id.xy*SizeAndInvSize.zw*2.0;
+#if UNITY_UV_STARTS_AT_TOP
+    sceneUV.y = 1.0f - sceneUV.y;
+#endif
+
+    float3 positionVS = ComputeViewSpacePosition(sceneUV, deviceDepth, invProjMatrix);
+    float4 positionWS = float4(mul(unity_CameraToWorld, float4(positionVS, 1.0)).xyz, 1.0);
+    float4 historyNDC = mul(PrevViewProj,positionWS);
+    historyNDC /= historyNDC.w;
+    historyNDC.xy = historyNDC.xy * 0.5f + 0.5f;
+    // previousConstructionTexture resolution is half of screen resolution. 
+    uint2 historyIdx = historyNDC.xy * SizeAndInvSize.xy/2 + 0.5;;
+
+    float2 ScreenPosRange = abs(historyNDC.xy);
+
+    bool isOutScreen = (ScreenPosRange.x > 1.0f) || (ScreenPosRange.y > 1.0f);
+    //读取周围像素的颜色
+    //  LT---T---RT
+    //  |    |    |
+    //  L ---C--- R
+    //  |    |    |
+    //  LB---B---RB
+    float4 previousColorLT, previousColorT, previousColorRT, previousColorL, previousColorR, previousColorLB, previousColorB, previousColorRB;
+    int2 limination = SizeAndInvSize.xy / 4-1;
+    previousColorLT = RaymarchingTexture[max(int2(0,0), TileID.xy + IndexOffsets[0])];
+    previousColorT = RaymarchingTexture[max(int2(0, 0), TileID.xy + IndexOffsets[1])];
+    previousColorRT = RaymarchingTexture[min(limination,max(int2(0, 0), TileID.xy + IndexOffsets[2]))];
+    previousColorL = RaymarchingTexture[max(int2(0, 0), TileID.xy + IndexOffsets[3])];
+    previousColorR = RaymarchingTexture[min(limination,TileID.xy + IndexOffsets[4])];
+    previousColorLB = RaymarchingTexture[min(limination, max(int2(0, 0), TileID.xy + IndexOffsets[5]))];
+    previousColorB = RaymarchingTexture[min(limination, TileID.xy + IndexOffsets[6])];
+    previousColorRB = RaymarchingTexture[min(limination, TileID.xy + IndexOffsets[7])];
+    float4 previousColor = RaymarchingTexture[TileID.xy];
+
+    //读取周围像素的Depth tile 分辨率为 1/4
+    float2 tileTexUV = id.xy * SizeAndInvSize.zw/4.0;
+    float2 tileTexUV_C = tileTexUV.xy + SizeAndInvSize.zw;
+    float2 tileTexUV_RT = tileTexUV.xy + float2(SizeAndInvSize.z * 2, 0);
+    float2 tileTexUV_LB = tileTexUV.xy + float2(0, SizeAndInvSize.w * 2);
+    float depthLT, depthT, depthRT, depthL,depthC, depthR, depthLB, depthB, depthRB;
+    float4 depthL_C_T_LT = TileIndexAndSceneDistanceTexture.GatherGreen(samplerTileIndexAndSceneDistanceTexture, tileTexUV, int2(0, 0)).wzyx;
+    float4 depthB_RB_R_C = TileIndexAndSceneDistanceTexture.GatherGreen(samplerTileIndexAndSceneDistanceTexture, tileTexUV_C, int2(0, 0)).wzyx;
+    depthRT = TileIndexAndSceneDistanceTexture.Load(int3(TileID + int2(2, 0), 0)).y;
+    depthLB = TileIndexAndSceneDistanceTexture.Load(int3(TileID + int2(0, 2),0)).y;
+    depthLT = depthL_C_T_LT.w;
+    depthT = depthL_C_T_LT.z;
+    depthL = depthL_C_T_LT.x;
+    depthB = depthB_RB_R_C.x;
+    depthRB = depthB_RB_R_C.y;
+    depthR = depthB_RB_R_C.z;
+    float minDeltaDis = 20000.0f;
+    float depth = TileAndSD.y;
+    float RealEyeDepth = LinearEyeDepth(depth, _ZBufferParams);
+    int nearIndex = 0;
+    float4 cloudColor[9] = {previousColorLT ,previousColorT,previousColorRT,previousColorL,previousColor,previousColorR,previousColorLB,previousColorB,previousColorRB };
+    float depthList[9] = { depthLT ,depthT,depthRT,depthL,depth,depthR,depthRB,depthB,depthLB };
+    float deltaDisList[9];
+    //查找深度上距离最近的CloudFogDS中的颜色
+    [unroll]
+    for (int i = 0; i < 9; i++)
+    {
+        float rd = LinearEyeDepth(depthList[i], _ZBufferParams);
+        float deltaDis = abs(RealEyeDepth - rd);
+        deltaDisList[i] = deltaDis;
+        if (deltaDis < minDeltaDis)
+        {
+            nearIndex = i;
+            minDeltaDis = deltaDis;
+        }
+    }
+    //查找点的时候需要drop掉深度差距大的点。
+    float4 NearestCloudColor = cloudColor[nearIndex];
+    //查找周围8个CloudFogColorDS像素所形成的ColorAABB
+    float4 CloudColorAABB_Max = NearestCloudColor;
+    float4 CloudColorAABB_Min = NearestCloudColor;
+    float ThresholdDeltaEyeDepthRate = 0.1f;
+    [unroll]
+    for (int j = 1; j < 9; j++)
+    {
+        if (deltaDisList[j] <= depthList[j] * ThresholdDeltaEyeDepthRate)
+        {
+            CloudColorAABB_Max = max(CloudColorAABB_Max, cloudColor[j]);
+            CloudColorAABB_Min = min(CloudColorAABB_Min, cloudColor[j]);
+        }
+    }
+    float4 HistoryColor = PreviousTexture[historyIdx.xy];
+    //float ClipBlend = HistoryClip(HistoryColor.rgb, TargetColor.rgb, CloudColorAABB_Min.rgb, CloudColorAABB_Max.rgb);
+
+    //float DistToClamp = saturate(-ClipBlend) / ( saturate(-ClipBlend) + 1 );
+    //float DistToClamp = abs( ClipBlend ) / ( 1 - ClipBlend );
+   // ClipBlend = saturate(ClipBlend);
+
+    //HistoryColor = lerp(HistoryColor, TargetColor, ClipBlend);
+    HistoryColor = clamp(HistoryColor, CloudColorAABB_Min, CloudColorAABB_Max);
+    Result[id.xy] = lerp(NearestCloudColor, HistoryColor, (isOutScreen ? 1 : 1));
+}

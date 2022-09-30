@@ -4,7 +4,7 @@
 #pragma kernel lightInject
 #pragma kernel lpvClear
 #include "SamplingLibrary.hlsl"
-#pragma enable_d3d11_debug_symbols
+#pragma enable_d3d11_debug_symbols 
 // Create a RenderTexture with enableRandomWrite flag and set it
 // with cs.SetTexture
 RWTexture3D<float4> gridRTex;
@@ -177,9 +177,9 @@ inline float GetLuminance(float3 color)
 //        gridLuminanceTex[cellindex] = luminance;
 //    //}
 //}
+ 
 
-
-[numthreads(1, 1, 1)]
+[numthreads(4, 4, 4)]
 void lightInject(uint3 id : SV_DispatchThreadID)
 {
     float3 vpl_worldPos = convertGridIndexToPointWS(id);

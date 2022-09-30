@@ -1,0 +1,72 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 6
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: ScreenSpaceCloudShader
+  m_Shader: {fileID: 4800000, guid: 54c9171cd1b7af04c8a5c339098ae2e4, type: 3}
+  m_ShaderKeywords: 
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - BlueNoiseTex:
+        m_Texture: {fileID: 2800000, guid: c9a993a63534c0447b3f6eb74f458978, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - CloudTex:
+        m_Texture: {fileID: 11700000, guid: fc8903f5502be1447b28f4d70b93d97d, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - DetailNoiseTex:
+        m_Texture: {fileID: 11700000, guid: 90ef4fd60ae5a1d4d9e10a237812fd7e, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - ShapeNoiseTex:
+        m_Texture: {fileID: 11700000, guid: fc8903f5502be1447b28f4d70b93d97d, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _BlueNoiseEffect: 1
+    - _DensetyOffset: -1.5
+    - _DstBlend: 1
+    - _LightmarchNumber: 87
+    - _MarchLength: 10
+    - _Pos2UVScale: 0.72
+    - _SrcBlend: 1
+    - _ZWrite: 0
+    - _absorptivity: 0.32
+    - _detailNoiseScale: 19
+    - _g: 0.45
+    - _loopCount: 6
+    - _moveScale: 0.31
+    - boundUVWScale: 0.0005
+    - densityMultiplier: 2
+    - detailNoiseWight: 4
+    - offsetSpeed: 0.27
+    m_Colors:
+    - _DetailNoiseWight: {r: 1, g: 0, b: 0, a: 0}
+    - _DetailTexChanleWight: {r: 1.46, g: 0.48, b: 0.4, a: 0}
+    - _NoiseWight: {r: 1, g: 0, b: 0, a: 0}
+    - _ShapeNoiseWight: {r: 1, g: 0, b: 0, a: 0}
+    - _ShapeTexChanleWight: {r: 2.25, g: 0.64, b: 0.18, a: 0.24}
+    - _moveDir: {r: 1, g: 0, b: 0, a: 0}
+    - boxMax: {r: 20001.5, g: 2100, b: 19998.67, a: 0}
+    - boxMin: {r: -19998.5, g: 1900, b: -20001.33, a: 0}
+    - detailOffset: {r: 81.3, g: 5, b: 1, a: 0}
+    - shapeOffset: {r: 1, g: 1, b: 1, a: 0}
+  m_BuildTextureStacks: []

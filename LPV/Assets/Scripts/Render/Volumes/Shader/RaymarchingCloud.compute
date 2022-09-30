@@ -1,0 +1,197 @@
+#pragma kernel RaymarchingCloud _MAIN_LIGHT_SHADOWS_CASCADE _SHADOWS_SOFT
+#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+#include "ScreenSpaceUtility.hlsl"
+#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+Texture2D<float> MinMax;
+TEXTURE2D(_CameraDepthTexture);
+SAMPLER(sampler_CameraDepthTexture);
+RWTexture2D<float4> Result;
+
+//#pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
+//#pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
+//#pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
+//#pragma multi_compile_fragment _ _SHADOWS_SOFT
+//#pragma multi_compile _ LIGHTMAP_SHADOW_MIXING
+//#pragma multi_compile _ SHADOWS_SHADOWMASK
+
+//#pragma enable_d3d11_debug_symbols
+//大气半径
+float AtmosphereRadius;
+//星球半径
+float PlanetRadius;
+float _DistanceScale;
+
+float2 _DensityScaleHeight;
+
+float3 _ScatteringR;
+float3 _ScatteringM;
+float3 _ExtinctionR;
+float3 _ExtinctionM;
+
+float _MieG;
+
+float RayleighPhase(float theta) {
+    float cosTheta = cos(theta);
+    return 3 / 16 * PI * (1 + cosTheta * cosTheta);
+}
+
+float Transmittance(float beta) {
+    return exp(beta);
+}
+
+float PhaseFunctionR(float LoV) {
+    float phase = (3.0 / (16.0 * PI)) * (1 + (LoV * LoV));
+    return phase;
+}
+
+float PhaseFunctionM(float LoV) {
+    float g = _MieG;
+    float g2 = g * g;
+    float phase = (1.0 / (4.0 * PI)) * ((3.0 * (1.0 - g2)) / (2.0 * (2.0 + g2))) * ((1 + LoV * LoV) / (pow((1 + g2 - 2 * g * LoV), 3.0 / 2.0)));
+    return phase;
+}
+
+
+float2 GetOpticalDepthPA(float3 position,float3 planetCenter) {
+    float height = length(position - planetCenter) - PlanetRadius;
+    float2 dpa = exp(-height / _DensityScaleHeight.xy);
+    return dpa;
+}
+
+
+float2 GetOpticalDepthCP(float3 position, float3 lightDir,float3 planetCenter) {
+    float3 rayStart = position;
+    float3 rayDir = lightDir;
+
+    float2 intersection = RaySphereIntersection(rayStart, rayDir, planetCenter, AtmosphereRadius);
+    float3 rayEnd = rayStart + rayDir * intersection.y;
+
+    float stepCount = 8;
+    float3 step = (rayEnd - rayStart) / stepCount;
+    float stepSize = length(step);
+    float2 density = 0;
+
+    for (float s = 0; s < stepCount; s++)
+    {
+        float3 position = rayStart + step * s;
+        float height = abs(length(position - planetCenter) - PlanetRadius);
+        float2 localDensity = exp(-(height / _DensityScaleHeight));
+
+        density += localDensity * stepSize;
+    }
+
+    return density;
+}
+
+
+//----- Input
+// rayStart		视线起点 A
+// rayDir		视线方向
+// rayLength		AB 长度
+// planetCenter		地球中心坐标
+// distanceScale	世界坐标的尺寸
+// lightdir		太阳光方向
+// sampleCount		AB 采样次数
+
+//----- Output : 
+// extinction       T(PA)
+// inscattering:	Inscatering
+float4 IntegrateInscatteringRealtime(float3 rayStart, float3 rayDir, float rayLength, float3 planetCenter, float distanceScale, Light light, float sampleCount, out float4 extinction)
+{
+    float3 step = rayDir * (rayLength / sampleCount);
+    float stepSize = length(step) * distanceScale;
+    //视线上的点进行累加
+    //                      C
+    //                     /
+    //                    /
+    //                   /
+    //                  /
+    //                 /
+    // A－－－－－－－/
+    //                 P
+    //计算光学深度D(CP) ,D(PA)
+    //Beta(theta)*phi(h)*散射系数(dot(V,L))
+    //Beta(theta) constant
+    //phi(h) 海拔为h处的大气密度比例
+    //散射系数(dot(V,L)):Phase function
+    //ds :stepSize 每次raymarching的步长
+    //I*Beta(theta)*PhaseFunction(VoL)*Sum(exp(-beta(theta)*[D(CP)+D(PA)])*phi(h)*ds)
+    float3 scatterR = 0;
+    float3 scatterM = 0;
+    float2 dpa = 0;
+    float2 dcp = 0;
+    for (int s = 0; s < sampleCount; s++) {
+        float3 p = rayStart + step * s;
+        half4 shadowCoord = TransformWorldToShadowCoord(p);
+        Light light = GetMainLight(shadowCoord);
+        dcp = GetOpticalDepthCP(p, light.direction, planetCenter);
+        bool bInShadow = light.shadowAttenuation < 0.1;
+        if (!bInShadow) {
+            
+            float2 localDensityPA = GetOpticalDepthPA(p, planetCenter) * stepSize;
+            dpa += localDensityPA;
+            float2 cpa = dpa + dcp;
+            //calculate transmittance
+            float3 transmittanceR = exp(-_ScatteringR * cpa.x);
+            float3 transmittanceM = exp(-_ScatteringM * cpa.y);
+
+            scatterR += localDensityPA.x * transmittanceR;
+            scatterM += localDensityPA.y * transmittanceM;
+        }
+        
+    }
+    float phR = PhaseFunctionR(dot(rayDir, light.direction.xyz));
+    float phM = PhaseFunctionM(dot(rayDir, light.direction.xyz));
+    scatterR = scatterR * phR;
+    scatterM = scatterM * phM;
+    float3 lightInscatter = (scatterR* _ScatteringR + scatterM* _ScatteringM)*light.color;
+    float3 lightExtinction = exp(-(dcp.x * _ScatteringR + dcp.y * _ScatteringM));
+    extinction = float4(lightExtinction, 0);
+    return float4(lightInscatter, lightExtinction.y);
+}
+
+
+[numthreads(8, 8, 1)]
+void RaymarchingCloud(uint3 id : SV_DispatchThreadID)
+{
+    //当前贴图和屏幕RT的比例
+    float size = 4.0;
+    float3 positionWS = GetWorldSpacePositionForIndex(id.xy, size);
+    float depthZ = TileIndexAndSceneDistanceTexture.Load(int3(id.xy, 0)).y;
+    float3 rayStart = _WorldSpaceCameraPos;
+    float3 rayDir = positionWS - _WorldSpaceCameraPos;
+    float rayLength = length(rayDir);
+    rayDir /= rayLength;
+    if (depthZ < 0.000001)
+    {
+        rayLength = 1e20;
+    }
+
+    float3 planetCenter = float3(0, -PlanetRadius, 0);
+    float2 intersection = RaySphereIntersection(rayStart, rayDir, planetCenter, AtmosphereRadius);
+
+    rayLength = min(intersection.y, rayLength);
+    intersection = RaySphereIntersection(rayStart, rayDir, planetCenter, PlanetRadius);
+    if (intersection.x > 0)
+        rayLength = min(rayLength, intersection.x);
+    float4 extinction;
+    if (depthZ < 0.000001)
+    {
+        half4 shadowCoord = TransformWorldToShadowCoord(rayStart);
+        Light light = GetMainLight(shadowCoord);
+
+        float4 inscattering = IntegrateInscatteringRealtime(rayStart, rayDir, rayLength, planetCenter, _DistanceScale, light, 512, extinction);
+        inscattering.w = 0;
+        Result[id.xy] = inscattering;
+    }
+    else {
+        half4 shadowCoord = TransformWorldToShadowCoord(rayStart);
+        Light light = GetMainLight(shadowCoord);
+
+        float4 inscattering = IntegrateInscatteringRealtime(rayStart, rayDir, rayLength, planetCenter, _DistanceScale, light, 512, extinction);
+        Result[id.xy] = inscattering;
+    }
+    
+}

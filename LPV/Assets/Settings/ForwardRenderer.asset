@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9561b035c4c1cad4cb991f7da03963ff, type: 3}
   m_Name: LPVFeature
   m_EditorClassIdentifier: 
-  m_Active: 1
+  m_Active: 0
   featureSetting:
     lpvGridResolution: 32
     rsmResolution: 256
@@ -33,11 +33,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f62c9c65cf3354c93be831c8bc075510, type: 3}
   m_Name: ScreenSpaceAmbientOcclusion
   m_EditorClassIdentifier: 
-  m_Active: 1
+  m_Active: 0
   m_Shader: {fileID: 4800000, guid: 0849e84e3d62649e8882e9d6f056a017, type: 3}
   m_Settings:
     Downsample: 1
-    AfterOpaque: 0
     Source: 0
     NormalSamples: 0
     Intensity: 3.18
@@ -56,12 +55,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a99fa6cb53c91e043904fdef6c9b91cd, type: 3}
   m_Name: RSMRenderPassFeature
   m_EditorClassIdentifier: 
-  m_Active: 1
+  m_Active: 0
   m_RSMResolution: 256
-  rsmSampleCount: 215
-  shadowDistance: 10
-  maxSampleRadius: 0
-  intensity: 0.201
+  rsmSampleCount: 4
+  shadowDistance: 0
+  maxSampleRadius: 406
+  intensity: 0.36
   shadowMapRatio: 0.1
   rsmPassEvent: 100
   DebugRendering: 0
@@ -81,14 +80,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: de640fe3d0db1804a85f9fc8f5cadab6, type: 3}
   m_Name: ForwardRenderer
   m_EditorClassIdentifier: 
-  debugShaders:
-    debugReplacementPS: {fileID: 4800000, guid: cf852408f2e174538bcd9b7fda1c5ae7, type: 3}
   m_RendererFeatures:
   - {fileID: -123725698142992360}
   - {fileID: -5042612203464350848}
   - {fileID: -4015511969177285770}
-  m_RendererFeatureMap: 18889910227048fe802375f8ea0a05ba76cbdb9d230946c8
-  m_UseNativeRenderPass: 0
+  - {fileID: 9001507330654095781}
+  - {fileID: 8192561420920057615}
+  m_RendererFeatureMap: 18889910227048fe802375f8ea0a05ba76cbdb9d230946c8a549b6a639c7eb7c0f6f82ce34d3b171
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
   xrSystemData: {fileID: 11400000, guid: 60e1133243b97e347b653163a8c01b64, type: 2}
   shaders:
@@ -99,11 +97,6 @@ MonoBehaviour:
     stencilDeferredPS: {fileID: 4800000, guid: e9155b26e1bc55942a41e518703fe304, type: 3}
     fallbackErrorPS: {fileID: 4800000, guid: e6e9a19c3678ded42a3bc431ebef7dbd, type: 3}
     materialErrorPS: {fileID: 4800000, guid: 5fd9a8feb75a4b5894c241777f519d4e, type: 3}
-    coreBlitPS: {fileID: 4800000, guid: 93446b5c5339d4f00b85c159e1159b7c, type: 3}
-    coreBlitColorAndDepthPS: {fileID: 4800000, guid: d104b2fc1ca6445babb8e90b0758136b, type: 3}
-    cameraMotionVector: {fileID: 4800000, guid: c56b7e0d4c7cb484e959caeeedae9bbf, type: 3}
-    objectMotionVector: {fileID: 4800000, guid: 7b3ede40266cd49a395def176e1bc486, type: 3}
-  m_AssetVersion: 1
   m_OpaqueLayerMask:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -119,8 +112,51 @@ MonoBehaviour:
     zFailOperation: 0
   m_ShadowTransparentReceive: 1
   m_RenderingMode: 0
-  m_DepthPrimingMode: 0
   m_AccurateGbufferNormals: 0
-  m_ClusteredRendering: 0
-  m_TileSize: 32
-  m_IntermediateTextureMode: 1
+--- !u!114 &8192561420920057615
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 91282afdfca9c7a4380858e12095efcf, type: 3}
+  m_Name: TAA
+  m_EditorClassIdentifier: 
+  m_Active: 0
+--- !u!114 &9001507330654095781
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a0c96aeab95bfbb49998f9dfe78f4605, type: 3}
+  m_Name: VolumeRenderFeature
+  m_EditorClassIdentifier: 
+  m_Active: 1
+  volumeSetting:
+    SampleSize: 2
+    cloudMaterial: {fileID: 2100000, guid: ea21570cfd098c1459925bd6004b2701, type: 2}
+    blitMat: {fileID: 2100000, guid: c172996b94b37c14d8bc95901595ee47, type: 2}
+    bounds:
+      m_Center: {x: 1.5, y: 2000, z: -1.33}
+      m_Extent: {x: 20000, y: 100, z: 20000}
+    _moveDir: {x: 1, y: 0, z: 0}
+    _moveScale: 0.31
+    _g: 0.76
+    _MarchLength: 0.01
+    _MaxMarchCount: 0
+    _LightMaxMarchNumber: 4
+    _BlueNoiseEffect: 1
+    _Pos2UVScale: 0.72
+    renderPassEvent: 500
+    minMaxComputeShader: {fileID: 7200000, guid: 4233b6d8ad45de54d82964822da62272, type: 3}
+    tileIndexAndSceneDisComputeShader: {fileID: 7200000, guid: aeda4a5542cda834c970e6a80264c0e1, type: 3}
+    resctructionComputeShader: {fileID: 7200000, guid: 41fe0eeb54413a849b73ec2e69f6eab0, type: 3}
+    raymarchingCloudShader: {fileID: 7200000, guid: 0eee3a4fa361a114d99c17aa9b2d1a90, type: 3}
+    BlitRenderPassEvent: 500

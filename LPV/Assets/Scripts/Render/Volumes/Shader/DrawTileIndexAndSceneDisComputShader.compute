@@ -1,0 +1,37 @@
+#pragma kernel DrawTileIndexAndSceneDis
+#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+
+RWTexture2D<float2> Result;
+int Jitter;//抖 动索引[0-3]
+float4 SizeAndInvSize;
+TEXTURE2D(MinMaxDepthTexture);
+SAMPLER(samplerMinMaxDepthTexture);
+Texture2D<float4> PreviousTexture;
+#pragma enable_d3d11_debug_symbols
+
+
+static const int2 IndexOffsets[8] = { int2(-1, -1), int2(0, -1), int2(1, -1), int2(-1, 1), int2(0, 1), int2(1, 1), int2(-1, 0), int2(1, 0) };
+static const int2 JitterOffset[4] = { int2(0,0),int2(1,0), int2(1,1), int2(1,0) };
+[numthreads(8, 8, 1)]
+void DrawTileIndexAndSceneDis(uint3 DispatchThreadID : SV_DispatchThreadID)
+{
+    float2 uvPixelSize = SizeAndInvSize.zw * 4.0f;
+    //float2 uvViewport = (float2(DispatchThreadID.xy) + 0.5f) * uvPixelSize;
+    float2 uvBuffer = float2(DispatchThreadID.xy + 0.5f) * uvPixelSize;
+    //JitterIndex = 0、1、2、3
+    /*
+        Gather方法在Unity中的取样存储的顺序应该是下面这样的顺序：
+                ┌—-—┰—-—┐    ┌—-—┰—-—┐
+                | w     | z    |    |   3   |  2  |
+                ├—-—┼—-—┤    ├—-—┼—-—┤
+                | x     | y    |    |   0   |  1  |
+                └—-—┴—-—┘    └—-—┴—-—┘
+        UV对应w像素的覆盖范围或者四个像素交叉位置
+        这里可以看出Gather方法的顺序和JitterIndex的顺序刚好相反，所以GatherRed后直接颠倒xyzw的顺序以符合JitterIndex的顺序
+    */
+    float4 TileMinMaxDepthZ = MinMaxDepthTexture.GatherRed(samplerMinMaxDepthTexture, uvBuffer, int2(0, 0)).wzyx;
+    float MaxDepthZ = max(max(TileMinMaxDepthZ.x, TileMinMaxDepthZ.y), max(TileMinMaxDepthZ.z, TileMinMaxDepthZ.w));//每次都选择最小深度
+    float tileEyeDepth = LinearEyeDepth(TileMinMaxDepthZ[Jitter], _ZBufferParams) ;
+    Result[DispatchThreadID.xy] = float2(float(Jitter), MaxDepthZ);
+}

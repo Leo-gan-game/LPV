@@ -94,91 +94,91 @@ Shader "Custom/Lit"
             HLSLPROGRAM
             #pragma exclude_renderers gles gles3 glcore
             #pragma target 4.5
-            #pragma enable_d3d11_debug_symbols
-        // -------------------------------------
-        // Material Keywords
-        #pragma shader_feature_local _NORMALMAP
-        #pragma shader_feature_local_fragment _ALPHATEST_ON
-        #pragma shader_feature_local_fragment _ALPHAPREMULTIPLY_ON
-        #pragma shader_feature_local_fragment _EMISSION
-        #pragma shader_feature_local_fragment _METALLICSPECGLOSSMAP
-        #pragma shader_feature_local_fragment _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
-        #pragma shader_feature_local_fragment _OCCLUSIONMAP
-        #pragma shader_feature_local _PARALLAXMAP
-        #pragma shader_feature_local _ _DETAIL_MULX2 _DETAIL_SCALED
-        #pragma shader_feature_local_fragment _SPECULARHIGHLIGHTS_OFF
-        #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
-        #pragma shader_feature_local_fragment _SPECULAR_SETUP
-        #pragma shader_feature_local _RECEIVE_SHADOWS_OFF
+	    #pragma enable_d3d11_debug_symbols
+            // -------------------------------------
+            // Material Keywords
+            #pragma shader_feature_local _NORMALMAP
+            #pragma shader_feature_local_fragment _ALPHATEST_ON
+            #pragma shader_feature_local_fragment _ALPHAPREMULTIPLY_ON
+            #pragma shader_feature_local_fragment _EMISSION
+            #pragma shader_feature_local_fragment _METALLICSPECGLOSSMAP
+            #pragma shader_feature_local_fragment _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
+            #pragma shader_feature_local_fragment _OCCLUSIONMAP
+            #pragma shader_feature_local _PARALLAXMAP
+            #pragma shader_feature_local _ _DETAIL_MULX2 _DETAIL_SCALED
+            #pragma shader_feature_local_fragment _SPECULARHIGHLIGHTS_OFF
+            #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
+            #pragma shader_feature_local_fragment _SPECULAR_SETUP
+            #pragma shader_feature_local _RECEIVE_SHADOWS_OFF
 
-        // -------------------------------------
-        // Universal Pipeline keywords
-        #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
-        #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
-        #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
-        #pragma multi_compile_fragment _ _SHADOWS_SOFT
-        #pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
-        #pragma multi_compile _ LIGHTMAP_SHADOW_MIXING
-        #pragma multi_compile _ SHADOWS_SHADOWMASK
-        #pragma multi_compile _ RSM_RENDER
-        #pragma multi_compile _ RANDOM_BUF
-        #pragma multi_compile _ RSM_DEBUG
-        // -------------------------------------
-        // Unity defined keywords
-        #pragma multi_compile _ DIRLIGHTMAP_COMBINED
-        #pragma multi_compile _ LIGHTMAP_ON
-        #pragma multi_compile_fog
+            // -------------------------------------
+            // Universal Pipeline keywords
+            #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
+            #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
+            #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
+            #pragma multi_compile_fragment _ _SHADOWS_SOFT
+            #pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
+            #pragma multi_compile _ LIGHTMAP_SHADOW_MIXING
+            #pragma multi_compile _ SHADOWS_SHADOWMASK
+            #pragma multi_compile _ RSM_RENDER
+            #pragma multi_compile _ RANDOM_BUF
+            #pragma multi_compile _ RSM_DEBUG
+            // -------------------------------------
+            // Unity defined keywords
+            #pragma multi_compile _ DIRLIGHTMAP_COMBINED
+            #pragma multi_compile _ LIGHTMAP_ON
+            #pragma multi_compile_fog
 
-        //--------------------------------------
-        // GPU Instancing
-        #pragma multi_compile_instancing
-        #pragma multi_compile _ DOTS_INSTANCING_ON
+            //--------------------------------------
+            // GPU Instancing
+            #pragma multi_compile_instancing
+            #pragma multi_compile _ DOTS_INSTANCING_ON
 
-        #pragma vertex LitPassVertex
-        #pragma fragment RSMLitPassFragment
+            #pragma vertex LitPassVertex
+            #pragma fragment RSMLitPassFragment
 
-        #include "Packages/com.unity.render-pipelines.universal/Shaders/LitInput.hlsl"
-        //#include "Packages/com.unity.render-pipelines.universal/Shaders/LitForwardPass.hlsl"
-        #include "RSMLitForwardPass.hlsl"
-        ENDHLSL
-    }
+            #include "Packages/com.unity.render-pipelines.universal/Shaders/LitInput.hlsl"
+            //#include "Packages/com.unity.render-pipelines.universal/Shaders/LitForwardPass.hlsl"
+            #include "RSMLitForwardPass.hlsl"
+            ENDHLSL
+        }
 
     Pass
     {
         Name "ShadowCaster"
         Tags{"LightMode" = "ShadowCaster"}
 
-        ZWrite On
-        ZTest LEqual
-        ColorMask 0
-        Cull[_Cull]
+            ZWrite On
+            ZTest LEqual
+            ColorMask 0
+            Cull[_Cull]
 
-        HLSLPROGRAM
-        #pragma exclude_renderers gles gles3 glcore
-        #pragma target 4.5
-        #pragma enable_d3d11_debug_symbols
-        // -------------------------------------
-        // Material Keywords
-        #pragma shader_feature_local_fragment _ALPHATEST_ON
-        #pragma shader_feature_local_fragment _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
+	    HLSLPROGRAM
+	    #pragma exclude_renderers gles gles3 glcore
+	    #pragma target 4.5
+	    #pragma enable_d3d11_debug_symbols
+	    // -------------------------------------
+	    // Material Keywords
+	    #pragma shader_feature_local_fragment _ALPHATEST_ON
+	    #pragma shader_feature_local_fragment _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
 
-        //--------------------------------------
-        // GPU Instancing
-        #pragma multi_compile_instancing
-        #pragma multi_compile _ DOTS_INSTANCING_ON
+	    //--------------------------------------
+	    // GPU Instancing
+	    #pragma multi_compile_instancing
+	    #pragma multi_compile _ DOTS_INSTANCING_ON
 
-        // -------------------------------------
-        // Universal Pipeline keywords
+	    // -------------------------------------
+	    // Universal Pipeline keywords
 
-        // This is used during shadow map generation to differentiate between directional and punctual light shadows, as they use different formulas to apply Normal Bias
-        #pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
+	    // This is used during shadow map generation to differentiate between directional and punctual light shadows, as they use different formulas to apply Normal Bias
+	    #pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
 
-        #pragma vertex ShadowPassVertex
-        #pragma fragment ShadowPassFragment
+	    #pragma vertex ShadowPassVertex
+	    #pragma fragment ShadowPassFragment
 
-        #include "Packages/com.unity.render-pipelines.universal/Shaders/LitInput.hlsl"
-        #include "CustomShadowCasterPass.hlsl"
-        ENDHLSL
+	    #include "Packages/com.unity.render-pipelines.universal/Shaders/LitInput.hlsl"
+	    #include "Packages/com.unity.render-pipelines.universal/Shaders/ShadowCasterPass.hlsl"
+	    ENDHLSL
     }
     Pass
     {
@@ -189,95 +189,36 @@ Shader "Custom/Lit"
             ZTest LEqual
             Cull[_Cull]
 
-        HLSLPROGRAM
-        #pragma exclude_renderers gles gles3 glcore
-        #pragma target 4.5
+            HLSLPROGRAM
+            #pragma exclude_renderers gles gles3 glcore
+            #pragma target 4.5
 
-        // -------------------------------------
-        // Material Keywords
-        #pragma shader_feature_local_fragment _ALPHATEST_ON
-        #pragma shader_feature_local_fragment _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
+            // -------------------------------------
+            // Material Keywords
+            #pragma shader_feature_local_fragment _ALPHATEST_ON
+            #pragma shader_feature_local_fragment _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
 
-        //--------------------------------------
-        // GPU Instancing
-        #pragma multi_compile_instancing
-        #pragma multi_compile _ DOTS_INSTANCING_ON
+            //--------------------------------------
+            // GPU Instancing
+            #pragma multi_compile_instancing
+            #pragma multi_compile _ DOTS_INSTANCING_ON
 
-        // -------------------------------------
-        // Universal Pipeline keywords
+            // -------------------------------------
+            // Universal Pipeline keywords
 
-        // This is used during shadow map generation to differentiate between directional and punctual light shadows, as they use different formulas to apply Normal Bias
-        #pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
+            // This is used during shadow map generation to differentiate between directional and punctual light shadows, as they use different formulas to apply Normal Bias
+            #pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
 
             #pragma vertex ShadowPassVertex
             #pragma fragment ShadowPassFragment
             #pragma enable_d3d11_debug_symbols
             #include "Packages/com.unity.render-pipelines.universal/Shaders/LitInput.hlsl"
-            struct Attributes
-            {
-                float4 positionOS   : POSITION;
-                float3 normalOS     : NORMAL;
-                float2 texcoord     : TEXCOORD0;
-                UNITY_VERTEX_INPUT_INSTANCE_ID
-            };
-
-            struct Varyings
-            {
-                float2 uv           : TEXCOORD0;
-                float4 positionCS   : SV_POSITION;
-                float4 positionWS   : TEXCOORD1;
-                float3 normalWS     : TEXCOORD2;
-            };
-            struct PixelOutput
-            {
-                float4 pos:SV_Target0;
-                float3 normal:SV_Target1;
-                float3 flux:SV_Target2;
-            };
-            float4 GetShadowPositionHClip(Attributes input)
-            {
-                float3 positionWS = TransformObjectToWorld(input.positionOS.xyz);
-                float3 normalWS = TransformObjectToWorldNormal(input.normalOS);
-
-
-                float4 positionCS = TransformWorldToHClip(positionWS);
-
-#if UNITY_REVERSED_Z
-                positionCS.z = min(positionCS.z, UNITY_NEAR_CLIP_VALUE);
-#else
-                positionCS.z = max(positionCS.z, UNITY_NEAR_CLIP_VALUE);
-#endif
-
-                return positionCS;
-            }
-
-            Varyings ShadowPassVertex(Attributes input)
-            {
-                Varyings output;
-                UNITY_SETUP_INSTANCE_ID(input);
-
-                output.uv = TRANSFORM_TEX(input.texcoord, _BaseMap);
-                output.positionCS = GetShadowPositionHClip(input);
-                output.positionWS = float4(TransformObjectToWorld(input.positionOS.xyz),1);
-                output.normalWS = TransformObjectToWorldNormal(input.normalOS);
-                return output;
-            }
-
-            PixelOutput ShadowPassFragment(Varyings input) 
-            {
-                PixelOutput o;
-                o.pos = input.positionWS;
-                o.normal = input.normalWS * 0.5 + 0.5;
-                float NoL = dot(_MainLightPosition, input.normalWS);
-                o.flux =  SampleAlbedoAlpha(input.uv, TEXTURE2D_ARGS(_BaseMap, sampler_BaseMap)).rgb* _BaseColor.rgb* NoL;
-                return o;
-            }
-
-
+	    #include "RSMShadowCasterPass.hlsl"
         ENDHLSL
         }
-    Pass
-    {
+
+        Pass
+        {
             // Lightmode matches the ShaderPassName set in UniversalRenderPipeline.cs. SRPDefaultUnlit and passes with
             // no LightMode tag are also rendered by Universal Render Pipeline
             Name "GBuffer"
@@ -291,81 +232,81 @@ Shader "Custom/Lit"
             #pragma exclude_renderers gles gles3 glcore
             #pragma target 4.5
 
-        // -------------------------------------
-        // Material Keywords
-        #pragma shader_feature_local _NORMALMAP
-        #pragma shader_feature_local_fragment _ALPHATEST_ON
-        //#pragma shader_feature_local_fragment _ALPHAPREMULTIPLY_ON
-        #pragma shader_feature_local_fragment _EMISSION
-        #pragma shader_feature_local_fragment _METALLICSPECGLOSSMAP
-        #pragma shader_feature_local_fragment _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
-        #pragma shader_feature_local_fragment _OCCLUSIONMAP
-        #pragma shader_feature_local _PARALLAXMAP
-        #pragma shader_feature_local _ _DETAIL_MULX2 _DETAIL_SCALED
+            // -------------------------------------
+            // Material Keywords
+            #pragma shader_feature_local _NORMALMAP
+            #pragma shader_feature_local_fragment _ALPHATEST_ON
+            //#pragma shader_feature_local_fragment _ALPHAPREMULTIPLY_ON
+            #pragma shader_feature_local_fragment _EMISSION
+            #pragma shader_feature_local_fragment _METALLICSPECGLOSSMAP
+            #pragma shader_feature_local_fragment _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
+            #pragma shader_feature_local_fragment _OCCLUSIONMAP
+            #pragma shader_feature_local _PARALLAXMAP
+            #pragma shader_feature_local _ _DETAIL_MULX2 _DETAIL_SCALED
 
-        #pragma shader_feature_local_fragment _SPECULARHIGHLIGHTS_OFF
-        #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
-        #pragma shader_feature_local_fragment _SPECULAR_SETUP
-        #pragma shader_feature_local _RECEIVE_SHADOWS_OFF
+            #pragma shader_feature_local_fragment _SPECULARHIGHLIGHTS_OFF
+            #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
+            #pragma shader_feature_local_fragment _SPECULAR_SETUP
+            #pragma shader_feature_local _RECEIVE_SHADOWS_OFF
 
-        // -------------------------------------
-        // Universal Pipeline keywords
-        #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
-        //#pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
-        //#pragma multi_compile _ _ADDITIONAL_LIGHT_SHADOWS
-        #pragma multi_compile _ _SHADOWS_SOFT
-        #pragma multi_compile _ LIGHTMAP_SHADOW_MIXING
-        #pragma multi_compile _ SHADOWS_SHADOWMASK
+            // -------------------------------------
+            // Universal Pipeline keywords
+            #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
+            //#pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
+            //#pragma multi_compile _ _ADDITIONAL_LIGHT_SHADOWS
+            #pragma multi_compile _ _SHADOWS_SOFT
+            #pragma multi_compile _ LIGHTMAP_SHADOW_MIXING
+            #pragma multi_compile _ SHADOWS_SHADOWMASK
 
-        // -------------------------------------
-        // Unity defined keywords
-        #pragma multi_compile _ DIRLIGHTMAP_COMBINED
-        #pragma multi_compile _ LIGHTMAP_ON
-        #pragma multi_compile_fragment _ _GBUFFER_NORMALS_OCT
+            // -------------------------------------
+            // Unity defined keywords
+            #pragma multi_compile _ DIRLIGHTMAP_COMBINED
+            #pragma multi_compile _ LIGHTMAP_ON
+            #pragma multi_compile_fragment _ _GBUFFER_NORMALS_OCT
 
-        //--------------------------------------
-        // GPU Instancing
-        #pragma multi_compile_instancing
-        #pragma multi_compile _ DOTS_INSTANCING_ON
+            //--------------------------------------
+            // GPU Instancing
+            #pragma multi_compile_instancing
+            #pragma multi_compile _ DOTS_INSTANCING_ON
 
-        #pragma vertex LitGBufferPassVertex
-        #pragma fragment LitGBufferPassFragment
+            #pragma vertex LitGBufferPassVertex
+            #pragma fragment LitGBufferPassFragment
 
-        #include "Packages/com.unity.render-pipelines.universal/Shaders/LitInput.hlsl"
-        #include "Packages/com.unity.render-pipelines.universal/Shaders/LitGBufferPass.hlsl"
-        ENDHLSL
-    }
+            #include "Packages/com.unity.render-pipelines.universal/Shaders/LitInput.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/Shaders/LitGBufferPass.hlsl"
+            ENDHLSL
+        }
 
-    Pass
-    {
-        Name "DepthOnly"
-        Tags{"LightMode" = "DepthOnly"}
+        Pass
+        {
+            Name "DepthOnly"
+            Tags{"LightMode" = "DepthOnly"}
 
-        ZWrite On
-        ColorMask 0
-        Cull[_Cull]
+            ZWrite On
+            ColorMask 0
+            Cull[_Cull]
 
-        HLSLPROGRAM
-        #pragma exclude_renderers gles gles3 glcore
-        #pragma target 4.5
+            HLSLPROGRAM
+            #pragma exclude_renderers gles gles3 glcore
+            #pragma target 4.5
 
-        #pragma vertex DepthOnlyVertex
-        #pragma fragment DepthOnlyFragment
+            #pragma vertex DepthOnlyVertex
+            #pragma fragment DepthOnlyFragment
 
-        // -------------------------------------
-        // Material Keywords
-        #pragma shader_feature_local_fragment _ALPHATEST_ON
-        #pragma shader_feature_local_fragment _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
+            // -------------------------------------
+            // Material Keywords
+            #pragma shader_feature_local_fragment _ALPHATEST_ON
+            #pragma shader_feature_local_fragment _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
 
-        //--------------------------------------
-        // GPU Instancing
-        #pragma multi_compile_instancing
-        #pragma multi_compile _ DOTS_INSTANCING_ON
+            //--------------------------------------
+            // GPU Instancing
+            #pragma multi_compile_instancing
+            #pragma multi_compile _ DOTS_INSTANCING_ON
 
-        #include "Packages/com.unity.render-pipelines.universal/Shaders/LitInput.hlsl"
-        #include "Packages/com.unity.render-pipelines.universal/Shaders/DepthOnlyPass.hlsl"
-        ENDHLSL
-    }
+            #include "Packages/com.unity.render-pipelines.universal/Shaders/LitInput.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/Shaders/DepthOnlyPass.hlsl"
+            ENDHLSL
+        }
 
         // This pass is used when drawing to a _CameraNormalsTexture texture
         Pass
@@ -383,21 +324,21 @@ Shader "Custom/Lit"
             #pragma vertex DepthNormalsVertex
             #pragma fragment DepthNormalsFragment
 
-        // -------------------------------------
-        // Material Keywords
-        #pragma shader_feature_local _NORMALMAP
-        #pragma shader_feature_local_fragment _ALPHATEST_ON
-        #pragma shader_feature_local_fragment _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
+            // -------------------------------------
+            // Material Keywords
+            #pragma shader_feature_local _NORMALMAP
+            #pragma shader_feature_local_fragment _ALPHATEST_ON
+            #pragma shader_feature_local_fragment _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
 
-        //--------------------------------------
-        // GPU Instancing
-        #pragma multi_compile_instancing
-        #pragma multi_compile _ DOTS_INSTANCING_ON
+            //--------------------------------------
+            // GPU Instancing
+            #pragma multi_compile_instancing
+            #pragma multi_compile _ DOTS_INSTANCING_ON
 
-        #include "Packages/com.unity.render-pipelines.universal/Shaders/LitInput.hlsl"
-        #include "Packages/com.unity.render-pipelines.universal/Shaders/DepthNormalsPass.hlsl"
-        ENDHLSL
-    }
+            #include "Packages/com.unity.render-pipelines.universal/Shaders/LitInput.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/Shaders/DepthNormalsPass.hlsl"
+            ENDHLSL
+        }
 
         // This pass it not used during regular rendering, only for lightmap baking.
         Pass
@@ -452,12 +393,12 @@ Shader "Custom/Lit"
         }
     }
 
-        SubShader
+    SubShader
     {
         // Universal Pipeline tag is required. If Universal render pipeline is not set in the graphics settings
         // this Subshader will fail. One can add a subshader below or fallback to Standard built-in to make this
         // material work with both Universal Render Pipeline and Builtin Unity Pipeline
-        Tags{"RenderType" = "Opaque" "RenderPipeline" = "UniversalPipeline" "UniversalMaterialType" = "Lit" "IgnoreProjector" = "True" "ShaderModel" = "2.0"}
+        Tags{"RenderType" = "Opaque" "RenderPipeline" = "UniversalPipeline" "UniversalMaterialType" = "Lit" "IgnoreProjector" = "True" "ShaderModel"="2.0"}
         LOD 300
 
         // ------------------------------------------------------------------
@@ -477,118 +418,117 @@ Shader "Custom/Lit"
             #pragma only_renderers gles gles3 glcore d3d11
             #pragma target 2.0
 
-        //--------------------------------------
-        // GPU Instancing
-        #pragma multi_compile_instancing
+            //--------------------------------------
+            // GPU Instancing
+            #pragma multi_compile_instancing
 
-        // -------------------------------------
-        // Material Keywords
-        #pragma shader_feature_local _NORMALMAP
-        #pragma shader_feature_local_fragment _ALPHATEST_ON
-        #pragma shader_feature_local_fragment _ALPHAPREMULTIPLY_ON
-        #pragma shader_feature_local_fragment _EMISSION
-        #pragma shader_feature_local_fragment _METALLICSPECGLOSSMAP
-        #pragma shader_feature_local_fragment _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
-        #pragma shader_feature_local_fragment _OCCLUSIONMAP
-        #pragma shader_feature_local _PARALLAXMAP
-        #pragma shader_feature_local _ _DETAIL_MULX2 _DETAIL_SCALED
+            // -------------------------------------
+            // Material Keywords
+            #pragma shader_feature_local _NORMALMAP
+            #pragma shader_feature_local_fragment _ALPHATEST_ON
+            #pragma shader_feature_local_fragment _ALPHAPREMULTIPLY_ON
+            #pragma shader_feature_local_fragment _EMISSION
+            #pragma shader_feature_local_fragment _METALLICSPECGLOSSMAP
+            #pragma shader_feature_local_fragment _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
+            #pragma shader_feature_local_fragment _OCCLUSIONMAP
+            #pragma shader_feature_local _PARALLAXMAP
+            #pragma shader_feature_local _ _DETAIL_MULX2 _DETAIL_SCALED
 
-        #pragma shader_feature_local_fragment _SPECULARHIGHLIGHTS_OFF
-        #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
-        #pragma shader_feature_local_fragment _SPECULAR_SETUP
-        #pragma shader_feature_local _RECEIVE_SHADOWS_OFF
+            #pragma shader_feature_local_fragment _SPECULARHIGHLIGHTS_OFF
+            #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
+            #pragma shader_feature_local_fragment _SPECULAR_SETUP
+            #pragma shader_feature_local _RECEIVE_SHADOWS_OFF
 
-        // -------------------------------------
-        // Universal Pipeline keywords
-        #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
-        #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
-        #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
-        #pragma multi_compile_fragment _ _SHADOWS_SOFT
-        #pragma multi_compile _ LIGHTMAP_SHADOW_MIXING
-        #pragma multi_compile _ SHADOWS_SHADOWMASK
-        #pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
+            // -------------------------------------
+            // Universal Pipeline keywords
+            #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
+            #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
+            #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
+            #pragma multi_compile_fragment _ _SHADOWS_SOFT
+            #pragma multi_compile _ LIGHTMAP_SHADOW_MIXING
+            #pragma multi_compile _ SHADOWS_SHADOWMASK
+            #pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
 
-        // -------------------------------------
-        // Unity defined keywords
-        #pragma multi_compile _ DIRLIGHTMAP_COMBINED
-        #pragma multi_compile _ LIGHTMAP_ON
-        #pragma multi_compile_fog
+            // -------------------------------------
+            // Unity defined keywords
+            #pragma multi_compile _ DIRLIGHTMAP_COMBINED
+            #pragma multi_compile _ LIGHTMAP_ON
+            #pragma multi_compile_fog
 
-        #pragma vertex LitPassVertex
-        #pragma fragment LitPassFragment
+            #pragma vertex LitPassVertex
+            #pragma fragment LitPassFragment
 
-        #include "Packages/com.unity.render-pipelines.universal/Shaders/LitInput.hlsl"
-        #include "Packages/com.unity.render-pipelines.universal/Shaders/LitForwardPass.hlsl"
-        ENDHLSL
-    }
+            #include "Packages/com.unity.render-pipelines.universal/Shaders/LitInput.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/Shaders/LitForwardPass.hlsl"
+            ENDHLSL
+        }
 
-    Pass
-    {
-        Name "ShadowCaster"
-        Tags{"LightMode" = "ShadowCaster"}
+        Pass
+        {
+            Name "ShadowCaster"
+            Tags{"LightMode" = "ShadowCaster"}
 
-        ZWrite On
-        ZTest LEqual
-        ColorMask 0
-        Cull[_Cull]
+            ZWrite On
+            ZTest LEqual
+            ColorMask 0
+            Cull[_Cull]
 
-        HLSLPROGRAM
-        #pragma only_renderers gles gles3 glcore d3d11
-        #pragma target 2.0
-            #pragma enable_d3d11_debug_symbols
-        //--------------------------------------
-        // GPU Instancing
-        #pragma multi_compile_instancing
+            HLSLPROGRAM
+            #pragma only_renderers gles gles3 glcore d3d11
+            #pragma target 2.0
 
-        // -------------------------------------
-        // Material Keywords
-        #pragma shader_feature_local_fragment _ALPHATEST_ON
-        #pragma shader_feature_local_fragment _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
+            //--------------------------------------
+            // GPU Instancing
+            #pragma multi_compile_instancing
 
-        // -------------------------------------
-        // Universal Pipeline keywords
+            // -------------------------------------
+            // Material Keywords
+            #pragma shader_feature_local_fragment _ALPHATEST_ON
+            #pragma shader_feature_local_fragment _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
 
-        // This is used during shadow map generation to differentiate between directional and punctual light shadows, as they use different formulas to apply Normal Bias
-        #pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
+            // -------------------------------------
+            // Universal Pipeline keywords
 
-        #pragma vertex ShadowPassVertex
-        #pragma fragment ShadowPassFragment
+            // This is used during shadow map generation to differentiate between directional and punctual light shadows, as they use different formulas to apply Normal Bias
+            #pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
 
-        #include "Packages/com.unity.render-pipelines.universal/Shaders/LitInput.hlsl"
-        #include "CustomShadowCasterPass.hlsl"
-        ENDHLSL
-    }
+            #pragma vertex ShadowPassVertex
+            #pragma fragment ShadowPassFragment
 
+            #include "Packages/com.unity.render-pipelines.universal/Shaders/LitInput.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/Shaders/ShadowCasterPass.hlsl"
+            ENDHLSL
+        }
 
-    Pass
-    {
-        Name "DepthOnly"
-        Tags{"LightMode" = "DepthOnly"}
+        Pass
+        {
+            Name "DepthOnly"
+            Tags{"LightMode" = "DepthOnly"}
 
-        ZWrite On
-        ColorMask 0
-        Cull[_Cull]
+            ZWrite On
+            ColorMask 0
+            Cull[_Cull]
 
-        HLSLPROGRAM
-        #pragma only_renderers gles gles3 glcore d3d11
-        #pragma target 2.0
+            HLSLPROGRAM
+            #pragma only_renderers gles gles3 glcore d3d11
+            #pragma target 2.0
 
-        //--------------------------------------
-        // GPU Instancing
-        #pragma multi_compile_instancing
+            //--------------------------------------
+            // GPU Instancing
+            #pragma multi_compile_instancing
 
-        #pragma vertex DepthOnlyVertex
-        #pragma fragment DepthOnlyFragment
+            #pragma vertex DepthOnlyVertex
+            #pragma fragment DepthOnlyFragment
 
-        // -------------------------------------
-        // Material Keywords
-        #pragma shader_feature_local_fragment _ALPHATEST_ON
-        #pragma shader_feature_local_fragment _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
+            // -------------------------------------
+            // Material Keywords
+            #pragma shader_feature_local_fragment _ALPHATEST_ON
+            #pragma shader_feature_local_fragment _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
 
-        #include "Packages/com.unity.render-pipelines.universal/Shaders/LitInput.hlsl"
-        #include "Packages/com.unity.render-pipelines.universal/Shaders/DepthOnlyPass.hlsl"
-        ENDHLSL
-    }
+            #include "Packages/com.unity.render-pipelines.universal/Shaders/LitInput.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/Shaders/DepthOnlyPass.hlsl"
+            ENDHLSL
+        }
 
         // This pass is used when drawing to a _CameraNormalsTexture texture
         Pass
@@ -606,20 +546,20 @@ Shader "Custom/Lit"
             #pragma vertex DepthNormalsVertex
             #pragma fragment DepthNormalsFragment
 
-        // -------------------------------------
-        // Material Keywords
-        #pragma shader_feature_local _NORMALMAP
-        #pragma shader_feature_local_fragment _ALPHATEST_ON
-        #pragma shader_feature_local_fragment _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
+            // -------------------------------------
+            // Material Keywords
+            #pragma shader_feature_local _NORMALMAP
+            #pragma shader_feature_local_fragment _ALPHATEST_ON
+            #pragma shader_feature_local_fragment _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
 
-        //--------------------------------------
-        // GPU Instancing
-        #pragma multi_compile_instancing
+            //--------------------------------------
+            // GPU Instancing
+            #pragma multi_compile_instancing
 
-        #include "Packages/com.unity.render-pipelines.universal/Shaders/LitInput.hlsl"
-        #include "Packages/com.unity.render-pipelines.universal/Shaders/DepthNormalsPass.hlsl"
-        ENDHLSL
-    }
+            #include "Packages/com.unity.render-pipelines.universal/Shaders/LitInput.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/Shaders/DepthNormalsPass.hlsl"
+            ENDHLSL
+        }
 
         // This pass it not used during regular rendering, only for lightmap baking.
         Pass
@@ -674,6 +614,6 @@ Shader "Custom/Lit"
         }
     }
 
-        FallBack "Hidden/Universal Render Pipeline/FallbackError"
-        CustomEditor "UnityEditor.Rendering.Universal.ShaderGUI.LitShader"
+    FallBack "Hidden/Universal Render Pipeline/FallbackError"
+    CustomEditor "UnityEditor.Rendering.Universal.ShaderGUI.LitShader"
 }

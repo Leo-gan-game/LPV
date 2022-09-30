@@ -177,7 +177,7 @@ Shader "Custom/LitWithOutRSM"
         #pragma fragment ShadowPassFragment
 
         #include "Packages/com.unity.render-pipelines.universal/Shaders/LitInput.hlsl"
-         #include "CustomShadowCasterPass.hlsl"
+        #include "Packages/com.unity.render-pipelines.universal/Shaders/ShadowCasterPass.hlsl"
         ENDHLSL
     }
    
@@ -460,7 +460,7 @@ Shader "Custom/LitWithOutRSM"
         #pragma fragment ShadowPassFragment
 
         #include "Packages/com.unity.render-pipelines.universal/Shaders/LitInput.hlsl"
-        #include "CustomShadowCasterPass.hlsl"
+        #include "Packages/com.unity.render-pipelines.universal/Shaders/ShadowCasterPass.hlsl"
         ENDHLSL
     }
 

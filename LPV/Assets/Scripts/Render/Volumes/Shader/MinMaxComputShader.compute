@@ -1,0 +1,32 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel MinMaxDepth
+#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWTexture2D<float> Result;
+float4 SizeAndInvSize;
+TEXTURE2D(_CameraDepthTexture);
+SAMPLER(sampler_CameraDepthTexture);
+
+
+#pragma enable_d3d11_debug_symbols
+
+
+static const int2 IndexOffsets[8] = { int2(-1, -1), int2(0, -1), int2(1, -1), int2(-1, 1), int2(0, 1), int2(1, 1), int2(-1, 0), int2(1, 0) };
+[numthreads(4,4,1)]
+void MinMaxDepth (uint3 id : SV_DispatchThreadID)
+{
+    float2 depthUV = float2(id.xy + 0.5f) * SizeAndInvSize.zw * 2.0f;
+    float4 tileMinMaxDepth = _CameraDepthTexture.GatherRed(sampler_CameraDepthTexture, depthUV, int2(0, 0)).wzyx;
+    float depth = 0;
+    if (id.x % 2 == id.y % 2) {
+        //min
+        depth = min(min(tileMinMaxDepth.x, tileMinMaxDepth.y), min(tileMinMaxDepth.z, tileMinMaxDepth.w));
+    }
+    else {
+        //max
+        depth = max(max(tileMinMaxDepth.x, tileMinMaxDepth.y), max(tileMinMaxDepth.z, tileMinMaxDepth.w));
+    }
+
+    Result[id.xy] = depth;
+}
